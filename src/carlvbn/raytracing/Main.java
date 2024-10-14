@@ -16,7 +16,7 @@ public class Main {
         }
 
         JFrame frame = new JFrame("Ray Tracing");
-        frame.setSize(1280, 720);
+        frame.setSize(1920, 1080);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
