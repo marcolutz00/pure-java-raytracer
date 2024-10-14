@@ -157,6 +157,7 @@ public class Viewport extends JPanel {
             e.printStackTrace();
         }
 
+        camera.setPitch(30);
         // Create a blank cursor to hide mouse
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");

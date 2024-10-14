@@ -453,7 +453,8 @@ public class SettingsPanel extends JPanel {
         sdLightDistance.addChangeListener(lightSettingsChangeListener);
 
         sdResolution.addChangeListener(e -> viewport.setResolution(sdResolution.getValue()/100F));
-
+        sdResolution.setValue(100);
+        
         sdSpeed.addChangeListener(e -> viewport.setMovementSpeed(sdSpeed.getValue()/100F));
 
         sdSensitivity.addChangeListener(e -> viewport.setMouseSensitivity(sdSensitivity.getValue()/100F));
