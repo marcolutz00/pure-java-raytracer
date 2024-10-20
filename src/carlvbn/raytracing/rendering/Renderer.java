@@ -10,7 +10,13 @@ import carlvbn.raytracing.solids.Solid;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Renderer {
     private static final float GLOBAL_ILLUMINATION = 0.3F;
@@ -20,6 +26,17 @@ public class Renderer {
 
     public static float bloomIntensity = 0.5F;
     public static int bloomRadius = 10;
+    
+    private static final int AMOUNT_THREADS = 1;
+    private static final int AMOUNT_TASKS = 1000;
+    public static ThreadPool poolie = new ThreadPool(AMOUNT_THREADS, AMOUNT_TASKS);
+    
+    private static ExecutorService exec = Executors.newFixedThreadPool(4);
+    
+    // slower
+//    private static ExecutorService exec = Executors.newSingleThreadExecutor();
+//    private static ExecutorService exec = Executors.newCachedThreadPool();
+//    private static ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
 
     /** Renders the scene to a Pixel buffer
      * @param scene The scene to Render
@@ -78,6 +95,9 @@ public class Renderer {
             Arrays.fill(pixels, offset, offset + length, rgb);
         }
     }
+    
+    
+    
     /** Renders the scene to a java.awt.Graphics object
      * @param scene The scene to Render
      * @param width The width of the desired output
@@ -101,6 +121,80 @@ public class Renderer {
 
         System.out.println("Rendered in " + (System.currentTimeMillis() - start) + "ms");
     }
+    
+    // own implementation
+    public static void renderScene2(Scene scene, Graphics gfx, int width, int height, float resolution) {
+    	resolution = 1.0f;
+    	
+        int blockSize = (int) (1 / resolution);
+        long start = System.currentTimeMillis();
+        
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        
+        int amountTasks = width / blockSize;
+        CountDownLatch latchie = new CountDownLatch(amountTasks);
+
+        
+        // pour chaque colonne
+        for (int x = 0; x<width; x+=blockSize) {
+        	CalculatorPixel cp = new CalculatorPixel(x, width, height, blockSize, scene, gfx, latchie, image);
+//        	poolie.submit(cp);
+        	exec.submit(cp);
+        }
+        
+        try {
+			latchie.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        gfx.drawImage(image, 0, 0, null);
+        
+//        exec.shutdown();
+
+        System.out.println("Rendered in " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    
+    private static class CalculatorPixel implements Runnable {
+    	private int x, width, height, blockSize;
+    	private Graphics gfx;
+    	private BufferedImage image;
+    	private Scene scene;
+    	private CountDownLatch latchie;
+    	
+    	
+    	public CalculatorPixel(int x, int width, int height, int blockSize, Scene scene, Graphics gfx, CountDownLatch latchie, BufferedImage image) {
+    		this.x = x;
+    		this.width = width;
+    		this.height = height;
+    		this.blockSize = blockSize;
+    		this.scene = scene;
+    		this.gfx = gfx;
+    		this.image = image;
+    		this.latchie = latchie;
+    		
+    	}
+
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			
+            for (int y = 0; y<height; y+=blockSize) {
+            	float[] uv = getNormalizedScreenCoordinates(x, y, width, height);
+                PixelData pixelData = computePixelInfo(scene, uv[0], uv[1]);
+                
+                fillColorRect(image, x, y, blockSize, blockSize, pixelData.getColor());
+            }
+            
+            latchie.countDown();
+		}
+    	
+    }
+    
+    
 
     /** Same as the above but applies Post-Processing effects before drawing. */
     public static void renderScenePostProcessed(Scene scene, Graphics gfx, int width, int height, float resolution) {

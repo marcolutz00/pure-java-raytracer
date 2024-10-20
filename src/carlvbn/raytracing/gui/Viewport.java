@@ -178,7 +178,8 @@ public class Viewport extends JPanel {
 
             BufferedImage tempBuffer = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
             if (postProcessing) Renderer.renderScenePostProcessed(scene, tempBuffer.getGraphics(), getWidth(), getHeight(), resolution);
-            else Renderer.renderScene(scene, tempBuffer.getGraphics(), getWidth(), getHeight(), resolution);
+            else Renderer.renderScene2(scene, tempBuffer.getGraphics(), getWidth(), getHeight(), resolution);
+//            else Renderer.renderScene(scene, tempBuffer.getGraphics(), getWidth(), getHeight(), resolution);
             frameBuffer = tempBuffer;
 
             repaint();
